@@ -11,3 +11,7 @@ packages = ["mongodb"]
 deploymentTarget = "autoscale"
 run = ["npm", "run", "start"]
 build = ["npm", "run", "build"]
+
+[[ports]]
+localPort = 5000
+externalPort = 80
