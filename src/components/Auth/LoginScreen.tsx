@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Store, User, Lock } from 'lucide-react';
-import { mockUsers } from '../../data/mockData';
+import apiService from '../../services/api';
 
 interface LoginScreenProps {
   onLogin: (user: any) => void;
@@ -10,24 +10,34 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    setError('');
     
-    const user = mockUsers.find(u => u.username === username && u.password === password);
-    
-    if (user) {
-      onLogin(user);
-      setError('');
-    } else {
-      setError('Invalid username or password');
+    try {
+      const response = await apiService.login({ username, password });
+      onLogin(response.user);
+    } catch (err: any) {
+      setError(err.message || 'Login failed');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const quickLogin = (role: string) => {
-    const user = mockUsers.find(u => u.role === role);
-    if (user) {
-      onLogin(user);
+  const quickLogin = async (credentials: { username: string; password: string }) => {
+    setLoading(true);
+    setError('');
+    
+    try {
+      const response = await apiService.login(credentials);
+      onLogin(response.user);
+    } catch (err: any) {
+      setError(err.message || 'Login failed');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -85,9 +95,10 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
           <button
             type="submit"
-            className="w-full bg-orange-600 text-white py-3 rounded-lg font-medium hover:bg-orange-700 transition-colors"
+            disabled={loading}
+            className="w-full bg-orange-600 text-white py-3 rounded-lg font-medium hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Sign In
+            {loading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
 
@@ -95,19 +106,22 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           <p className="text-sm text-gray-600 text-center mb-4">Quick Demo Login:</p>
           <div className="grid grid-cols-3 gap-2">
             <button
-              onClick={() => quickLogin('admin')}
+              onClick={() => quickLogin({ username: 'admin', password: 'admin123' })}
+              disabled={loading}
               className="text-xs bg-blue-100 text-blue-800 py-2 px-3 rounded-lg hover:bg-blue-200 transition-colors"
             >
               Admin
             </button>
             <button
-              onClick={() => quickLogin('cashier')}
+              onClick={() => quickLogin({ username: 'cashier', password: 'cashier123' })}
+              disabled={loading}
               className="text-xs bg-green-100 text-green-800 py-2 px-3 rounded-lg hover:bg-green-200 transition-colors"
             >
               Cashier
             </button>
             <button
-              onClick={() => quickLogin('kitchen')}
+              onClick={() => quickLogin({ username: 'kitchen', password: 'kitchen123' })}
+              disabled={loading}
               className="text-xs bg-purple-100 text-purple-800 py-2 px-3 rounded-lg hover:bg-purple-200 transition-colors"
             >
               Kitchen

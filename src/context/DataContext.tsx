@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { mockMenuItems, mockOrders, mockInventory, mockOutlets } from '../data/mockData';
+import apiService from '../services/api';
 
 interface AppContextType {
   menuItems: any[];
@@ -18,17 +18,55 @@ interface AppContextType {
   clearCart: () => void;
   createOrder: (orderData: any) => void;
   updateOrderStatus: (orderId: string, status: string) => void;
+  loading: boolean;
+  error: string | null;
+  refreshData: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
-  const [menuItems, setMenuItems] = useState(mockMenuItems);
-  const [orders, setOrders] = useState(mockOrders);
-  const [inventory, setInventory] = useState(mockInventory);
-  const [outlets] = useState(mockOutlets);
+  const [menuItems, setMenuItems] = useState<any[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [inventory, setInventory] = useState<any[]>([]);
+  const [outlets, setOutlets] = useState<any[]>([]);
   const [currentOutlet, setCurrentOutlet] = useState<any>(null);
   const [cart, setCart] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Load data from API
+  const refreshData = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const [menuResponse, ordersResponse, inventoryResponse, outletsResponse] = await Promise.all([
+        apiService.getMenuItems(),
+        apiService.getOrders(),
+        apiService.getInventoryItems(),
+        apiService.getOutlets().catch(() => []) // Non-admin users can't access outlets
+      ]);
+
+      setMenuItems(menuResponse);
+      setOrders(ordersResponse);
+      setInventory(inventoryResponse);
+      setOutlets(outletsResponse);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load data');
+      console.error('Error loading data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load data on mount
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      refreshData();
+    }
+  }, []);
 
   const addToCart = (item: any) => {
     setCart(prevCart => {
@@ -62,28 +100,40 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setCart([]);
   };
 
-  const createOrder = (orderData: any) => {
-    const newOrder = {
-      id: `ORD-${Date.now()}`,
-      ...orderData,
-      items: cart,
-      total: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
-      status: 'pending',
-      createdAt: new Date(),
-      outlet: currentOutlet?.id || 'outlet-1'
-    };
-    
-    setOrders(prevOrders => [newOrder, ...prevOrders]);
-    clearCart();
-    return newOrder;
+  const createOrder = async (orderData: any) => {
+    try {
+      const orderPayload = {
+        ...orderData,
+        items: cart.map(item => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity
+        }))
+      };
+      
+      const newOrder = await apiService.createOrder(orderPayload);
+      setOrders(prevOrders => [newOrder, ...prevOrders]);
+      clearCart();
+      return newOrder;
+    } catch (err: any) {
+      setError(err.message || 'Failed to create order');
+      throw err;
+    }
   };
 
-  const updateOrderStatus = (orderId: string, status: string) => {
-    setOrders(prevOrders =>
-      prevOrders.map(order =>
-        order.id === orderId ? { ...order, status } : order
-      )
-    );
+  const updateOrderStatus = async (orderId: string, status: string) => {
+    try {
+      const updatedOrder = await apiService.updateOrderStatus(orderId, status);
+      setOrders(prevOrders =>
+        prevOrders.map(order =>
+          order._id === orderId ? updatedOrder : order
+        )
+      );
+    } catch (err: any) {
+      setError(err.message || 'Failed to update order status');
+      throw err;
+    }
   };
 
   const value = {
@@ -102,7 +152,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     removeFromCart,
     clearCart,
     createOrder,
-    updateOrderStatus
+    updateOrderStatus,
+    loading,
+    error,
+    refreshData
   };
 
   return (

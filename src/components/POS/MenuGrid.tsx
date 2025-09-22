@@ -38,9 +38,9 @@ export function MenuGrid({ selectedCategory }: MenuGridProps) {
             
             {item.available ? (
               <div className="flex items-center space-x-2">
-                {getItemQuantity(item.id) > 0 && (
+                {getItemQuantity(item._id || item.id) > 0 && (
                   <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-sm font-medium">
-                    {getItemQuantity(item.id)}
+                    {getItemQuantity(item._id || item.id)}
                   </span>
                 )}
                 <button
