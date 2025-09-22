@@ -1,9 +1,11 @@
 modules = ["nodejs-20", "web"]
 [agent]
 expertMode = true
+integrations = ["javascript_database:1.0.0"]
 
 [nix]
 channel = "stable-25_05"
+packages = ["mongodb"]
 
 [deployment]
 deploymentTarget = "autoscale"

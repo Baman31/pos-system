@@ -6,6 +6,17 @@ const connectDB = require('./config/database');
 // Load environment variables
 dotenv.config();
 
+// Set default development environment variables if not present
+if (!process.env.MONGODB_URI) {
+  process.env.MONGODB_URI = 'mongodb://localhost:27017/restaurant_pos';
+}
+if (!process.env.JWT_SECRET) {
+  process.env.JWT_SECRET = 'your_development_jwt_secret_change_in_production';
+}
+if (!process.env.NODE_ENV) {
+  process.env.NODE_ENV = 'development';
+}
+
 // Connect to MongoDB
 connectDB();
 
@@ -47,11 +58,11 @@ app.use('*', (req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3001;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV}`);
+app.listen(PORT, 'localhost', () => {
+  console.log(`Server running on localhost:${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
 module.exports = app;
