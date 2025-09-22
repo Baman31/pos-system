@@ -33,6 +33,14 @@ export function OrdersManager() {
     }
   };
 
+  const handleUpdateOrderStatus = async (orderId: string, status: string) => {
+    try {
+      await updateOrderStatus(orderId, status);
+    } catch (error) {
+      alert('Failed to update order status');
+    }
+  };
+
   return (
     <div className="p-6">
       <div className="bg-white rounded-lg shadow-sm">
@@ -119,7 +127,7 @@ export function OrdersManager() {
               <div className="flex space-x-2">
                 {order.status === 'pending' && (
                   <button
-                    onClick={() => updateOrderStatus(order.id, 'preparing')}
+                    onClick={() => handleUpdateOrderStatus(order.id, 'preparing')}
                     className="flex-1 bg-blue-600 text-white py-2 px-3 rounded text-sm hover:bg-blue-700"
                   >
                     Start Preparing
@@ -127,7 +135,7 @@ export function OrdersManager() {
                 )}
                 {order.status === 'preparing' && (
                   <button
-                    onClick={() => updateOrderStatus(order.id, 'ready')}
+                    onClick={() => handleUpdateOrderStatus(order.id, 'ready')}
                     className="flex-1 bg-green-600 text-white py-2 px-3 rounded text-sm hover:bg-green-700"
                   >
                     Mark Ready
@@ -135,7 +143,7 @@ export function OrdersManager() {
                 )}
                 {order.status === 'ready' && (
                   <button
-                    onClick={() => updateOrderStatus(order.id, 'completed')}
+                    onClick={() => handleUpdateOrderStatus(order.id, 'completed')}
                     className="flex-1 bg-gray-600 text-white py-2 px-3 rounded text-sm hover:bg-gray-700"
                   >
                     Complete
@@ -143,7 +151,7 @@ export function OrdersManager() {
                 )}
                 {['pending', 'preparing'].includes(order.status) && (
                   <button
-                    onClick={() => updateOrderStatus(order.id, 'cancelled')}
+                    onClick={() => handleUpdateOrderStatus(order.id, 'cancelled')}
                     className="bg-red-600 text-white py-2 px-3 rounded text-sm hover:bg-red-700"
                   >
                     Cancel
